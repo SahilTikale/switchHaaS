@@ -108,6 +108,14 @@ def serve():
     # Start server
     rest.serve(debug=debug)
 
+@cmd
+def version():
+    """List HaaS version"""
+    url = object_url('version')
+    do_get(url)
+
+
+
 
 @cmd
 def serve_networks():

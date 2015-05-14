@@ -13,9 +13,16 @@
 # governing permissions and limitations under the License.
 
 from setuptools import setup, find_packages
+import os
+
+v = open('haas/version.py')
+exec(v.read())
+
+
 
 setup(name='haas',
-      version='0.2rc2',
+      version=__version__,
+     # version='0.2rc2',
       url='https://github.com/CCI-MOC/haas',
       packages=find_packages(),
       scripts=['scripts/haas', 'scripts/create_bridges'],
