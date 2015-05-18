@@ -23,13 +23,7 @@ from haas import model
 from haas.config import cfg
 from haas.rest import rest_call
 from haas.errors import *
-from haas.version import __version__
 
-
-
-@rest_call('GET', '/version')
-def version():
-   return __version__
 
 
 @rest_call('PUT', '/user/<user>')

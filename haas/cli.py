@@ -24,6 +24,7 @@ import sys
 import urllib
 
 from functools import wraps
+import pkg_resources
 
 command_dict = {}
 usage_dict = {}
@@ -111,9 +112,8 @@ def serve():
 @cmd
 def version():
     """List HaaS version"""
-    url = object_url('version')
-    do_get(url)
-
+    ver = pkg_resources.require("haas")[0].version
+    print "haas", ver
 
 
 
