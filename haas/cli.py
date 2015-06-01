@@ -26,6 +26,10 @@ import urllib
 from functools import wraps
 import pkg_resources
 
+import argparse
+
+parser = argparse.ArgumentParser()
+
 command_dict = {}
 usage_dict = {}
 
@@ -110,11 +114,17 @@ def serve():
     rest.serve(debug=debug)
 
 @cmd
-def version():
-    """List HaaS version"""
-    ver = pkg_resources.require("haas")[0].version
-    print "haas", ver
+def haas_version():
+    """
+	Provides HaaS version 
+	Usage: haas -v or haas --version """
+	#Potentially this can be generalized to become a full-fledged function, which can take
+	#arbitary options as input (parameters to the function) and invoke approriate response 
+	#using argparse.
 
+    parser.add_argument("--version", "-v", action='version', version=pkg_resources.require("haas")[0].version)
+    args = parser.parse_args()
+    return args
 
 
 @cmd
@@ -411,10 +421,19 @@ def main():
     """
     config.load()
     config.configure_logging()
-
-    if len(sys.argv) < 2 or sys.argv[1] not in command_dict:
+    
+    
+    if len(sys.argv) < 2:
+        #Display usage for all commands
+        help()
+    
+    elif sys.argv[1] in ["--version", "-v"]:
+        haas_version()
+    
+    elif sys.argv[1] not in command_dict:
         # Display usage for all commands
         help()
+    
     else:
         command_dict[sys.argv[1]](*sys.argv[2:])
 
