@@ -1,4 +1,4 @@
-# Copyright 2013-2014 Massachusetts Open Cloud Contributors
+''# Copyright 2013-2014 Massachusetts Open Cloud Contributors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the
@@ -28,7 +28,6 @@ import pkg_resources
 
 import argparse
 
-parser = argparse.ArgumentParser()
 
 command_dict = {}
 usage_dict = {}
@@ -113,18 +112,18 @@ def serve():
     # Start server
     rest.serve(debug=debug)
 
-@cmd
-def haas_version():
-    """
-	Provides HaaS version 
-	Usage: haas -v or haas --version """
+
+#@cmd
+#def haas_version():
+#    """ Provides HaaS version 
+#	Usage: haas -v or haas --version """
 	#Potentially this can be generalized to become a full-fledged function, which can take
 	#arbitary options as input (parameters to the function) and invoke approriate response 
 	#using argparse.
 
-    parser.add_argument("--version", "-v", action='version', version=pkg_resources.require("haas")[0].version)
-    args = parser.parse_args()
-    return args
+#    parser.add_argument("--version", "-v", action='version', version=pkg_resources.require("haas")[0].version)
+#    args = parser.parse_args()
+#    return args
 
 
 @cmd
@@ -412,6 +411,14 @@ def help(*commands):
         sys.stdout.write('  %s\n' % usage_dict[name])
         sys.stdout.write('      %s\n' % command_dict[name].__doc__)
 
+help_str = '\n'.join(["%s\n\t%s"% (usage_dict[c], command_dict[c].__doc__) for c in sorted(command_dict.keys())])
+
+def build_parser(parser):
+    parser.add_argument("--version", "-v", action='version', version=pkg_resources.require("haas")[0].version)
+    parser.add_argument("pargs", nargs='*', metavar="command", help=help_str)
+
+
+from argparse import RawTextHelpFormatter
 
 def main():
     """Entry point to the CLI.
@@ -421,19 +428,17 @@ def main():
     """
     config.load()
     config.configure_logging()
-    
-    
-    if len(sys.argv) < 2:
-        #Display usage for all commands
-        help()
-    
-    elif sys.argv[1] in ["--version", "-v"]:
-        haas_version()
-    
-    elif sys.argv[1] not in command_dict:
-        # Display usage for all commands
-        help()
-    
+
+    parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
+    build_parser(parser)
+
+    args = parser.parse_args()
+    pargs = args.pargs
+    if len(pargs) == 0 or pargs[0] not in command_dict:
+        parser.print_help()
     else:
-        command_dict[sys.argv[1]](*sys.argv[2:])
+#        print pargs
+        command_dict[pargs[0]](*pargs[1:])
+
+
 
