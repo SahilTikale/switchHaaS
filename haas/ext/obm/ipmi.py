@@ -49,11 +49,15 @@ class Ipmi(Obm):
         """ Invoke ipmitool with the right host/pass etc. for this code.
         `args`- A list of any additional arguments to pass the ipmitool. 
         Returns the exit status of ipmitool.
+
+        Note: Includes the ``-I lanplus`` flag, available only in IPMI v2+.
+        This is needed for machines which do not accept the older. 
         """
         status = call(['ipmitool',
-        '-U', self.ipmi_user,
-        '-P', self.ipmi_pass,
-        '-H', self.ipmi_host]  + args)
+            '-I', 'lanplus', #see docstring above
+            '-U', self.ipmi_user,
+            '-P', self.ipmi_pass,
+            '-H', self.ipmi_host]  + args)
         
         if status != 0:
             logger = logging.getLogger(__name__)

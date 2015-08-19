@@ -33,8 +33,8 @@ Session = sessionmaker()
 
 # A joining table for users and projects, which have a many to many relationship:
 user_projects = Table('user_projects', Base.metadata,
-                    Column('user_id', Integer, ForeignKey('user.id')),
-                    Column('project_id', Integer, ForeignKey('project.id')))
+                    Column('user_id', ForeignKey('user.id')),
+                    Column('project_id', ForeignKey('project.id')))
 
 
 def init_db(create=False, uri=None):
@@ -59,7 +59,6 @@ def init_db(create=False, uri=None):
         #x = get_network_allocator()
         #print x
         #x.populate(Session())
-
 
 class AnonModel(Base):
     """A database model with a primary key, 'id', but no user-visible label
@@ -102,14 +101,14 @@ class Nic(Model):
     """a nic belonging to a Node"""
 
     # The Node to which the nic belongs:
-    owner_id   = Column(Integer,ForeignKey('node.id'), nullable=False)
+    owner_id   = Column(ForeignKey('node.id'), nullable=False)
     owner     = relationship("Node",backref=backref('nics'))
 
     # The mac address of the nic:
     mac_addr  = Column(String)
 
     # The switch port to which the nic is attached:
-    port_id   = Column(Integer,ForeignKey('port.id'))
+    port_id   = Column(ForeignKey('port.id'))
     port      = relationship("Port",backref=backref('nic',uselist=False))
 
     def __init__(self, node, label, mac_addr):
@@ -123,66 +122,15 @@ class Node(Model):
 
     # The project to which this node is allocated. If the project is null, the
     # node is unallocated:
-    project_id    = Column(Integer,ForeignKey('project.id'))
+    project_id    = Column(ForeignKey('project.id'))
     project       = relationship("Project",backref=backref('nodes'))
 
-    # ipmi connection information:
-#    ipmi_host = Column(String, nullable=False)
-#    ipmi_user = Column(String, nullable=False)
-#    ipmi_pass = Column(String, nullable=False)
- 
+    # The Obm info is fetched from the obm class and its respective subclass
+    # pertaining to the node 
     obm_id = Column(Integer, ForeignKey('obm.id'))
     obm = relationship("Obm", uselist=False, backref="node")
 
-
-#    def __init__(self, label, obm ):
-#        """Register the given node.
-#
-#        ipmi_* must be supplied to allow the HaaS to do things like reboot
-#        the node.
-#
-#        The node is initially registered with no nics; see the Nic class.
-#        """
-#        self.label = label
-#
-#        self.obm = obm
-#        self.ipmi_host = ipmi_host
-#        self.ipmi_user = ipmi_user
-#        self.ipmi_pass = ipmi_pass
-
-
-#    def _ipmitool(self, args):
-#        """Invoke ipmitool with the right host/pass etc. for this node.
-#
-#        `args` - A list of any additional arguments to pass to ipmitool.
-#
-#        Returns the exit status of ipmitool.
-#        """
-#        status = call(['ipmitool',
-#            '-U', self.ipmi_user,
-#            '-P', self.ipmi_pass,
-#            '-H', self.ipmi_host] + args)
-#        if status != 0:
-#            logger = logging.getLogger(__name__)
-#            logger.info('Nonzero exit status from ipmitool, args = %r', args)
-#        return status
-#
-#    @no_dry_run
-#    def power_cycle(self):
-#        """Reboot the node via ipmi.
-#
-#        Returns True if successful, False otherwise.
-#        """
-#        self._ipmitool(['chassis', 'bootdev', 'pxe'])
-#        if self._ipmitool(['chassis', 'power', 'cycle']) == 0:
-#            return
-#        if self._ipmitool(['chassis', 'power', 'on']) == 0:
-#            # power cycle will fail if the machine isn't running, so let's
-#            # just turn it on in that case. This way we can save power by
-#            # turning things off without breaking the HaaS.
-#            return
-#        # If it still doesn't work, then it's a real error:
-#        raise OBMError('Could not power cycle node %s' % node.label)
+    # The node is initially registered with no nics; see the Nic class.
 
     @no_dry_run
     def start_console(self):
@@ -280,14 +228,14 @@ class Network(Model):
     # The project to which the network belongs, or None if the network was
     # created by the administrator.  This field determines who can delete a
     # network.
-    creator_id = Column(String,ForeignKey('project.id'))
+    creator_id = Column(ForeignKey('project.id'))
     creator    = relationship("Project",
                               backref=backref('networks_created'),
                               foreign_keys=[creator_id])
     # The project that has access to the network, or None if the network is
     # public.  This field determines who can connect a node or headnode to a
     # network.
-    access_id = Column(String, ForeignKey('project.id'))
+    access_id = Column(ForeignKey('project.id'))
     access    = relationship("Project",
                              backref=backref('networks_access'),
                              foreign_keys=[access_id])
@@ -318,7 +266,7 @@ class Port(Model):
     The port's label is an identifier that is meaningful only to the
     corresponding switch's driver.
     """
-    owner_id = Column(Integer, ForeignKey('switch.id'), nullable=False)
+    owner_id = Column(ForeignKey('switch.id'), nullable=False)
     owner = relationship('Switch', backref=backref('ports'))
 
     def __init__(self, label, switch):
@@ -442,7 +390,7 @@ class Headnode(Model):
     """A virtual machine used to administer a project."""
 
     # The project to which this Headnode belongs:
-    project_id = Column(String, ForeignKey('project.id'), nullable=False)
+    project_id = Column(ForeignKey('project.id'), nullable=False)
     project = relationship("Project", backref=backref('headnodes', uselist=True))
 
     # True iff there are unapplied changes to the Headnode:
@@ -543,11 +491,11 @@ class Hnic(Model):
     """a network interface for a Headnode"""
 
     # The Headnode to which this Hnic belongs:
-    owner_id    = Column(Integer, ForeignKey('headnode.id'), nullable=False)
+    owner_id    = Column(ForeignKey('headnode.id'), nullable=False)
     owner       = relationship("Headnode", backref = backref('hnics'))
 
     # The network to which this Hnic is attached.
-    network_id  = Column(Integer, ForeignKey('network.id'))
+    network_id  = Column(ForeignKey('network.id'))
     network     = relationship("Network", backref=backref('hnics'))
 
     def __init__(self, headnode, label):
@@ -580,8 +528,8 @@ class NetworkingAction(AnonModel):
 
     # This model is not visible in the API, so inherit from AnonModel
 
-    nic_id         = Column(Integer, ForeignKey('nic.id'), nullable=False)
-    new_network_id = Column(Integer, ForeignKey('network.id'), nullable=True)
+    nic_id         = Column(ForeignKey('nic.id'), nullable=False)
+    new_network_id = Column(ForeignKey('network.id'), nullable=True)
     channel        = Column(String, nullable=False)
 
     nic = relationship("Nic", backref=backref('current_action', uselist=False))
@@ -597,8 +545,8 @@ class NetworkAttachment(AnonModel):
     #
     # * (nic_id, network_id)
     # * (nic_id, channel)
-    nic_id     = Column(Integer, ForeignKey('nic.id'),     nullable=False)
-    network_id = Column(Integer, ForeignKey('network.id'), nullable=False)
+    nic_id     = Column(ForeignKey('nic.id'),     nullable=False)
+    network_id = Column(ForeignKey('network.id'), nullable=False)
     channel    = Column(String, nullable=False)
 
     nic     = relationship('Nic', backref=backref('attachments'))
