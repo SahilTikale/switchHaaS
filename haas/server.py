@@ -13,6 +13,7 @@ def register_drivers():
     This must be run *after* extensions have been loaded.
     """
     build_class_map_for(model.Switch)
+    build_class_map_for(model.Obm)
 
 
 def validate_state():
@@ -33,7 +34,7 @@ def validate_state():
 def stop_orphan_consoles():
     """Stop any orphaned console logging processes.
 
-    These may exist if HaaS was shut down ucleanly.
+    These may exist if HaaS was shut down uncleanly.
     """
     # Stop all orphan console logging processes on startup
     db = model.Session()

@@ -56,6 +56,9 @@ def init_db(create=False, uri=None):
     Session.configure(bind=engine)
     if create:
         get_network_allocator().populate(Session())
+        #x = get_network_allocator()
+        #print x
+        #x.populate(Session())
 
 
 class AnonModel(Base):
@@ -124,55 +127,62 @@ class Node(Model):
     project       = relationship("Project",backref=backref('nodes'))
 
     # ipmi connection information:
-    ipmi_host = Column(String, nullable=False)
-    ipmi_user = Column(String, nullable=False)
-    ipmi_pass = Column(String, nullable=False)
+#    ipmi_host = Column(String, nullable=False)
+#    ipmi_user = Column(String, nullable=False)
+#    ipmi_pass = Column(String, nullable=False)
+ 
+    obm_id = Column(Integer, ForeignKey('obm.id'))
+    obm = relationship("Obm", uselist=False, backref="node")
 
-    def __init__(self, label, ipmi_host, ipmi_user, ipmi_pass):
-        """Register the given node.
 
-        ipmi_* must be supplied to allow the HaaS to do things like reboot
-        the node.
+#    def __init__(self, label, obm ):
+#        """Register the given node.
+#
+#        ipmi_* must be supplied to allow the HaaS to do things like reboot
+#        the node.
+#
+#        The node is initially registered with no nics; see the Nic class.
+#        """
+#        self.label = label
+#
+#        self.obm = obm
+#        self.ipmi_host = ipmi_host
+#        self.ipmi_user = ipmi_user
+#        self.ipmi_pass = ipmi_pass
 
-        The node is initially registered with no nics; see the Nic class.
-        """
-        self.label = label
-        self.ipmi_host = ipmi_host
-        self.ipmi_user = ipmi_user
-        self.ipmi_pass = ipmi_pass
 
-    def _ipmitool(self, args):
-        """Invoke ipmitool with the right host/pass etc. for this node.
-
-        `args` - A list of any additional arguments to pass to ipmitool.
-
-        Returns the exit status of ipmitool.
-        """
-        status = call(['ipmitool',
-            '-U', self.ipmi_user,
-            '-P', self.ipmi_pass,
-            '-H', self.ipmi_host] + args)
-        if status != 0:
-            logger = logging.getLogger(__name__)
-            logger.info('Nonzero exit status from ipmitool, args = %r', args)
-        return status
-
-    @no_dry_run
-    def power_cycle(self):
-        """Reboot the node via ipmi.
-
-        Returns True if successful, False otherwise.
-        """
-        self._ipmitool(['chassis', 'bootdev', 'pxe'])
-        if self._ipmitool(['chassis', 'power', 'cycle']) == 0:
-            return
-        if self._ipmitool(['chassis', 'power', 'on']) == 0:
-            # power cycle will fail if the machine isn't running, so let's
-            # just turn it on in that case. This way we can save power by
-            # turning things off without breaking the HaaS.
-            return
-        # If it still doesn't work, then it's a real error:
-        raise OBMError('Could not power cycle node %s' % node.label)
+#    def _ipmitool(self, args):
+#        """Invoke ipmitool with the right host/pass etc. for this node.
+#
+#        `args` - A list of any additional arguments to pass to ipmitool.
+#
+#        Returns the exit status of ipmitool.
+#        """
+#        status = call(['ipmitool',
+#            '-U', self.ipmi_user,
+#            '-P', self.ipmi_pass,
+#            '-H', self.ipmi_host] + args)
+#        if status != 0:
+#            logger = logging.getLogger(__name__)
+#            logger.info('Nonzero exit status from ipmitool, args = %r', args)
+#        return status
+#
+#    @no_dry_run
+#    def power_cycle(self):
+#        """Reboot the node via ipmi.
+#
+#        Returns True if successful, False otherwise.
+#        """
+#        self._ipmitool(['chassis', 'bootdev', 'pxe'])
+#        if self._ipmitool(['chassis', 'power', 'cycle']) == 0:
+#            return
+#        if self._ipmitool(['chassis', 'power', 'on']) == 0:
+#            # power cycle will fail if the machine isn't running, so let's
+#            # just turn it on in that case. This way we can save power by
+#            # turning things off without breaking the HaaS.
+#            return
+#        # If it still doesn't work, then it's a real error:
+#        raise OBMError('Could not power cycle node %s' % node.label)
 
     @no_dry_run
     def start_console(self):
@@ -196,6 +206,7 @@ class Node(Model):
     # because we are not interested in the ouput of this command.
     @no_dry_run
     def stop_console(self):
+        return
         call(['pkill', '-f', 'ipmitool -H %s' %self.ipmi_host])
         proc = Popen(
             ['ipmitool',
@@ -210,6 +221,7 @@ class Node(Model):
         proc.wait()
 
     def delete_console(self):
+        return
         if os.path.isfile(self.get_console_log_filename()):
             os.remove(self.get_console_log_filename())
 
@@ -222,6 +234,31 @@ class Node(Model):
     def get_console_log_filename(self):
         return '/var/run/haas_console_logs/%s.log' % self.ipmi_host
 
+class Obm(AnonModel):
+    """ Obm superclass supporting various drivers 
+        related to out of band management of servers """
+    type = Column(String, nullable=False)
+
+    __mapper_args__ = {
+            'polymorphic_identity': 'new_obmType',
+            'polymorphic_on': type
+            }
+    @staticmethod
+    def validate(kwargs):
+        """
+        Verify that ``kwargs`` is a legal set of keywords args to ``__init__``
+        Raise a ``schema.SchemaError`` if the  ``kwargs`` is invalid. 
+        Note well: This is a *static* method; it will be invoked on the class.
+        """
+        assert False, "Subclasses MUST override the validate method "
+
+    def power_cycle(self):
+        """
+        Depending on which sub-class is associated with a given node,
+        The exact method of power cycle will differ Implements the power cycle method specific to 
+        each 'TYPE' of obm pertaining to the respective node
+        """
+        assert False, "Subclasses MUST override the power_cycle method "
 
 class Project(Model):
     """a collection of resources

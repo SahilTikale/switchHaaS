@@ -185,16 +185,28 @@ def project_remove_user(project, user):
                             #############
 
 
-@rest_call('PUT', '/node/<node>')
-def node_register(node, ipmi_host, ipmi_user, ipmi_pass):
+@rest_call('PUT', '/node/<node>', schema=Schema({
+    'obm':{
+        'type': basestring,
+        Optional(object):object,
+        },
+}))
+def node_register(node, **kwargs):
     """Create node.
 
     If the node already exists, a DuplicateError will be raised.
     """
     db = model.Session()
     _assert_absent(db, model.Node, node)
-    node = model.Node(node, ipmi_host, ipmi_user, ipmi_pass)
-    db.add(node)
+    obm_type = kwargs['obm']['type']
+    cls = concrete_class_for(model.Obm, obm_type)
+    if cls is None:
+        raise BadArgumentError('%r is not a valid OBM type.' % obm_type)
+    cls.validate(kwargs['obm'])
+
+    node_obj = model.Node(label=node, obm=cls(**kwargs['obm']))
+
+    db.add(node_obj)
     db.commit()
 
 
@@ -202,7 +214,7 @@ def node_register(node, ipmi_host, ipmi_user, ipmi_pass):
 def node_power_cycle(node):
     db = model.Session()
     node = _must_find(db, model.Node, node)
-    node.power_cycle()
+    node.obm.power_cycle()
 
 
 @rest_call('DELETE', '/node/<node>')
