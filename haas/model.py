@@ -133,8 +133,10 @@ class Node(Model):
     # The node is initially registered with no nics; see the Nic class.
 
 class Obm(AnonModel):
-    """ Obm superclass supporting various drivers 
-        related to out of band management of servers """
+    """Obm superclass supporting various drivers
+
+    related to out of band management of servers.
+    """
     type = Column(String, nullable=False)
 
     __mapper_args__ = {
@@ -142,16 +144,17 @@ class Obm(AnonModel):
             }
     @staticmethod
     def validate(kwargs):
-        """
-        Verify that ``kwargs`` is a legal set of keywords args to ``__init__``
+        """Verify that ``kwargs`` is a legal set of keywords args to ``__init__``
+
         Raise a ``schema.SchemaError`` if the  ``kwargs`` is invalid. 
         Note well: This is a *static* method; it will be invoked on the class.
         """
         assert False, "Subclasses MUST override the validate method "
 
     def power_cycle(self):
-        """Power cycles the node. 
-        Exact implementation to left to the subclasses. 
+        """Power cycles the node.
+
+        Exact implementation to left to the subclasses.
         """
         assert False, "Subclasses MUST override the power_cycle method "
 

@@ -24,7 +24,7 @@ from haas.dev_support import no_dry_run
 
 class Ipmi(Obm):
     id = Column(Integer, ForeignKey('obm.id'), primary_key=True)
-    ipmi_host = Column(String, nullable=False) 
+    ipmi_host = Column(String, nullable=False)
     ipmi_user = Column(String, nullable=False)
     ipmi_password = Column(String, nullable=False)
 
@@ -45,18 +45,19 @@ class Ipmi(Obm):
 
     def _ipmitool(self, args):
         """Invoke ipmitool with the right host/pass etc. for this code.
-        `args`- A list of any additional arguments to pass the ipmitool. 
+
+        `args`- A list of any additional arguments to pass the ipmitool.
         Returns the exit status of ipmitool.
 
         Note: Includes the ``-I lanplus`` flag, available only in IPMI v2+.
-        This is needed for machines which do not accept the older. 
+        This is needed for machines which do not accept the older version.
         """
         status = call(['ipmitool',
             '-I', 'lanplus', #see docstring above
             '-U', self.ipmi_user,
             '-P', self.ipmi_pass,
             '-H', self.ipmi_host]  + args)
-        
+
         if status != 0:
             logger = logging.getLogger(__name__)
             logger.info('Nonzero exit status form ipmitool, args = %r', args)
@@ -79,6 +80,7 @@ class Ipmi(Obm):
     @no_dry_run
     def start_console(self):
         """Starts logging the IPMI console."""
+
         # stdin and stderr are redirected to a PIPE that is never read in order
         # to prevent stdout from becoming garbled.  This happens because
         # ipmitool sets shell settings to behave like a tty when communicateing
