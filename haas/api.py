@@ -147,8 +147,8 @@ def project_detach_node(project, node):
     for nic in node.nics:
         if nic.current_action is not None:
             raise BlockedError("Node has pending network actions")
-    node.stop_console()
-    node.delete_console()
+    node.obm.stop_console()
+    node.obm.delete_console()
     project.nodes.remove(node)
     db.commit()
 
@@ -232,8 +232,8 @@ def node_delete(node):
     if node.nics != []:
         raise BlockedError("Node %r has nics; remove them before deleting %r.",
                            (node.label, node.label))
-    node.stop_console()
-    node.delete_console()
+    node.obm.stop_console()
+    node.obm.delete_console()
     db.delete(node)
     db.commit()
 
@@ -908,7 +908,7 @@ def show_console(nodename):
     """Show the contents of the console log."""
     db = model.Session()
     node = _must_find(db, model.Node, nodename)
-    log = node.get_console()
+    log = node.obm.get_console()
     if log is None:
         raise NotFoundError('The console log for %s '
                             'does not exist.' % nodename)
@@ -919,15 +919,15 @@ def start_console(nodename):
     """Start logging output from the console."""
     db = model.Session()
     node = _must_find(db, model.Node, nodename)
-    node.start_console()
+    node.obm.start_console()
 
 @rest_call('DELETE', '/node/<nodename>/console')
 def stop_console(nodename):
     """Stop logging output from the console and delete the log."""
     db = model.Session()
     node = _must_find(db, model.Node, nodename)
-    node.stop_console()
-    node.delete_console()
+    node.obm.stop_console()
+    node.obm.delete_console()
 
 
     # Helper functions #

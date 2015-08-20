@@ -1,4 +1,4 @@
-# Copyright 2013-2014 Massachusetts Open Cloud Contributors
+# Copyright 2013-2015 Massachusetts Open Cloud Contributors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the
@@ -12,9 +12,8 @@
 # express or implied. See the License for the specific language
 # governing permissions and limitations under the License.
 
-"""
-A obm driver for using Base HaaS to execute various OBM actions on nodes 
-
+""" An obm driver for recursive HaaS.
+It invokes Base HaaS to execute various OBM actions on nodes 
 """
 
 from sqlalchemy import Column, String, Integer, ForeignKey

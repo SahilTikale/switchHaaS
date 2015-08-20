@@ -40,8 +40,8 @@ def stop_orphan_consoles():
     db = model.Session()
     nodes = db.query(model.Node).all()
     for node in nodes:
-        node.stop_console()
-        node.delete_console()
+        node.obm.stop_console()
+        node.obm.delete_console()
 
 
 def init(init_db=False, stop_consoles=False):

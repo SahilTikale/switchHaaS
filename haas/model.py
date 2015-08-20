@@ -132,63 +132,12 @@ class Node(Model):
 
     # The node is initially registered with no nics; see the Nic class.
 
-    @no_dry_run
-    def start_console(self):
-        """Starts logging the IPMI console."""
-        # stdin and stderr are redirected to a PIPE that is never read in order
-        # to prevent stdout from becoming garbled.  This happens because
-        # ipmitool sets shell settings to behave like a tty when communicateing
-        # over Serial over Lan
-        Popen(
-            ['ipmitool',
-            '-H', self.ipmi_host,
-            '-U', self.ipmi_user,
-            '-P', self.ipmi_pass,
-            '-I', 'lanplus',
-            'sol', 'activate'],
-            stdin=PIPE,
-            stdout=open(self.get_console_log_filename(), 'a'),
-            stderr=PIPE)
-
-    # stdin, stdout, and stderr are redirected to a pipe that is never read
-    # because we are not interested in the ouput of this command.
-    @no_dry_run
-    def stop_console(self):
-        return
-        call(['pkill', '-f', 'ipmitool -H %s' %self.ipmi_host])
-        proc = Popen(
-            ['ipmitool',
-            '-H', self.ipmi_host,
-            '-U', self.ipmi_user,
-            '-P', self.ipmi_pass,
-            '-I', 'lanplus',
-            'sol', 'deactivate'],
-            stdin=PIPE,
-            stdout=PIPE,
-            stderr=PIPE)
-        proc.wait()
-
-    def delete_console(self):
-        return
-        if os.path.isfile(self.get_console_log_filename()):
-            os.remove(self.get_console_log_filename())
-
-    def get_console(self):
-        if not os.path.isfile(self.get_console_log_filename()):
-            return None
-        with open(self.get_console_log_filename(), 'r') as log:
-            return "".join(i for i in log.read() if ord(i)<128)
-
-    def get_console_log_filename(self):
-        return '/var/run/haas_console_logs/%s.log' % self.ipmi_host
-
 class Obm(AnonModel):
     """ Obm superclass supporting various drivers 
         related to out of band management of servers """
     type = Column(String, nullable=False)
 
     __mapper_args__ = {
-            'polymorphic_identity': 'new_obmType',
             'polymorphic_on': type
             }
     @staticmethod
@@ -201,12 +150,27 @@ class Obm(AnonModel):
         assert False, "Subclasses MUST override the validate method "
 
     def power_cycle(self):
-        """
-        Depending on which sub-class is associated with a given node,
-        The exact method of power cycle will differ Implements the power cycle method specific to 
-        each 'TYPE' of obm pertaining to the respective node
+        """Power cycles the node. 
+        Exact implementation to left to the subclasses. 
         """
         assert False, "Subclasses MUST override the power_cycle method "
+
+    def start_console(self):
+        """Starts logging to the console. """
+        assert False, "Subclasses MUST override the start_console method"
+
+    def stop_console(self):
+        """Stops console logging. """
+        assert False, "Subclasses MUST override the stop_console method"
+
+    def delete_console(self):
+        assert False, "Subclasses MUST override the delete_console method"
+
+    def get_console(self):
+        assert False, "Subclasses MUST override the get_console method"
+
+    def get_console_log_filename(self):
+        assert False, "Subclasses MUST override this method"
 
 class Project(Model):
     """a collection of resources

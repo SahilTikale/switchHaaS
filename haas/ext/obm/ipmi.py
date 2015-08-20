@@ -12,11 +12,7 @@
 # express or implied. See the License for the specific language
 # governing permissions and limitations under the License.
 
-"""
-A obm driver for implementing lego robot based controls for 
-arm based servers on in a DC at North Pole :-)
-
-"""
+"""IPMI driver for implementing out of band management. """
 
 from sqlalchemy import Column, String, Integer, ForeignKey
 import schema
@@ -33,9 +29,11 @@ class Ipmi(Obm):
     ipmi_password = Column(String, nullable=False)
 
     api_name = 'http://schema.massopencloud.org/haas/v0/obm/ipmi'
+
     __mapper_args__ = {
         'polymorphic_identity': api_name,
         }
+
     @staticmethod
     def validate(kwargs):
         schema.Schema({
@@ -46,7 +44,7 @@ class Ipmi(Obm):
             }).validate(kwargs)
 
     def _ipmitool(self, args):
-        """ Invoke ipmitool with the right host/pass etc. for this code.
+        """Invoke ipmitool with the right host/pass etc. for this code.
         `args`- A list of any additional arguments to pass the ipmitool. 
         Returns the exit status of ipmitool.
 
@@ -66,17 +64,63 @@ class Ipmi(Obm):
 
     @no_dry_run
     def power_cycle(self):
-        """
-        Reboot the node via ipmi. 
-        Returns True if successful, False othewise.
-        """
         self._ipmitool(['chassis', 'bootdev', 'pxe'])
         if self._ipmitool(['chassis', 'power', 'cycle']) == 0:
             return
         if self._ipmitool(['chassis', 'power', 'on']) == 0:
             # power cycle will fail if the machine is not running.
-            # It is a good idea to turn it on, that way we can save
-            # save power by turning things off without breaking the HaaS
+            # To avoid such a situation, just turn it on anyways.
+            # Doing this saves power by turning things off without 
+            # Without breaking the HaaS.
             return
-        #If this fails then it is a real problem
+        # If it is still does not work, then it is a real error:
         raise OBMError('Could not power cycle node %s' % self.node.label)
+
+    @no_dry_run
+    def start_console(self):
+        """Starts logging the IPMI console."""
+        # stdin and stderr are redirected to a PIPE that is never read in order
+        # to prevent stdout from becoming garbled.  This happens because
+        # ipmitool sets shell settings to behave like a tty when communicateing
+        # over Serial over Lan
+        Popen(
+            ['ipmitool',
+            '-H', self.ipmi_host,
+            '-U', self.ipmi_user,
+            '-P', self.ipmi_pass,
+            '-I', 'lanplus',
+            'sol', 'activate'],
+            stdin=PIPE,
+            stdout=open(self.get_console_log_filename(), 'a'),
+            stderr=PIPE)
+
+    # stdin, stdout, and stderr are redirected to a pipe that is never read
+    # because we are not interested in the ouput of this command.
+    @no_dry_run
+    def stop_console(self):
+        call(['pkill', '-f', 'ipmitool -H %s' %self.ipmi_host])
+        proc = Popen(
+            ['ipmitool',
+            '-H', self.ipmi_host,
+            '-U', self.ipmi_user,
+            '-P', self.ipmi_pass,
+            '-I', 'lanplus',
+            'sol', 'deactivate'],
+            stdin=PIPE,
+            stdout=PIPE,
+            stderr=PIPE)
+        proc.wait()
+
+    def delete_console(self):
+        return
+        if os.path.isfile(self.get_console_log_filename()):
+            os.remove(self.get_console_log_filename())
+
+    def get_console(self):
+        if not os.path.isfile(self.get_console_log_filename()):
+            return None
+        with open(self.get_console_log_filename(), 'r') as log:
+            return "".join(i for i in log.read() if ord(i)<128)
+
+    def get_console_log_filename(self):
+        return '/var/run/haas_console_logs/%s.log' % self.ipmi_host
