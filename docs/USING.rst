@@ -57,27 +57,30 @@ Using CURL Commands
 Included herwith are some examples about interacting with HaaS API using the curl 
 utility.
 
-** Example for registering a Node which use IPMI **
+Registering a Node which uses IPMI for out of band management
+-------------------------------------------------------------
 
-Node name: dummyNoderHaaS-02
-Ipmi info: 
-hostname:-           ipmiHost4node-02
-ipmi_username:-      ipmiUser4node-02
-ipmi_password:-      ipmiPass4node-02
+
+   - **Node name:**  dummyNoderHaaS-02
+   - **Ipmi info:**  
+      + **hostname:**           ipmiHost4node-02
+      + **ipmi_username:**      ipmiUser4node-02
+      + **ipmi_password:**      ipmiPass4node-02
 
 For nodes using IPMI use the following api call:
 
-::
+*Command::
 
    curl -X PUT http://127.0.0.1:5001/node/dummyNoderHaaS-02 -d '
    > {"obm": { "type": "http://schema.massopencloud.org/haas/v0/obm/ipmi",
-   > "ipmi_host": "ipmiHost4node-02",
-   > "ipmi_user": "ipmiUser4node-02",
-   > "ipmi_password": "ipmiPass4node-02"
+   > "host": "ipmiHost4node-02",
+   > "user": "ipmiUser4node-02",
+   > "password": "ipmiPass4node-02"
    > }}'
 
 
-** Example to register a switch with HaaS **
+Registering a switch with HaaS
+------------------------------
 ::
 
    curl -X put http://127.0.0.1:5000/switch/bHaaS_switch -d '
@@ -86,15 +89,16 @@ For nodes using IPMI use the following api call:
 As of 13 Aug 2015 there is no cli equivalent for this
 
 
-** Adding ports to the switch **
-
+Adding ports to the switch
+--------------------------
 ::
 
    curl -X put http://127.0.0.1:5000/switch/bHaaS_switch/port/port-01
 
 will register port-01 of switch named bHaaS_switch
 
-** Deleting Ports from HaaS **
+Deleting ports from HaaS
+------------------------
 
 ::
 
@@ -103,7 +107,8 @@ will register port-01 of switch named bHaaS_switch
 Will delete that port from the switch. 
 
 
-** Command to connect node nic to the switch port **
+Connecting node nic to the switch port
+--------------------------------------
 
 Nodename: 		dummyNode-01
 nic on the node: 	eth0
