@@ -24,9 +24,9 @@ from haas.dev_support import no_dry_run
 
 class Ipmi(Obm):
     id = Column(Integer, ForeignKey('obm.id'), primary_key=True)
-    ipmi_host = Column(String, nullable=False)
-    ipmi_user = Column(String, nullable=False)
-    ipmi_password = Column(String, nullable=False)
+    host = Column(String, nullable=False)
+    user = Column(String, nullable=False)
+    password = Column(String, nullable=False)
 
     api_name = 'http://schema.massopencloud.org/haas/v0/obm/ipmi'
 
@@ -38,9 +38,9 @@ class Ipmi(Obm):
     def validate(kwargs):
         schema.Schema({
             'type': Ipmi.api_name,
-            'ipmi_host': basestring,
-            'ipmi_user': basestring,
-            'ipmi_password': basestring,
+            'host': basestring,
+            'user': basestring,
+            'password': basestring,
             }).validate(kwargs)
 
     def _ipmitool(self, args):
@@ -54,9 +54,9 @@ class Ipmi(Obm):
         """
         status = call(['ipmitool',
             '-I', 'lanplus', #see docstring above
-            '-U', self.ipmi_user,
-            '-P', self.ipmi_pass,
-            '-H', self.ipmi_host]  + args)
+            '-U', self.user,
+            '-P', self.password,
+            '-H', self.host]  + args)
 
         if status != 0:
             logger = logging.getLogger(__name__)
@@ -87,9 +87,9 @@ class Ipmi(Obm):
         # over Serial over Lan
         Popen(
             ['ipmitool',
-            '-H', self.ipmi_host,
-            '-U', self.ipmi_user,
-            '-P', self.ipmi_pass,
+            '-H', self.host,
+            '-U', self.user,
+            '-P', self.password,
             '-I', 'lanplus',
             'sol', 'activate'],
             stdin=PIPE,
@@ -100,12 +100,12 @@ class Ipmi(Obm):
     # because we are not interested in the ouput of this command.
     @no_dry_run
     def stop_console(self):
-        call(['pkill', '-f', 'ipmitool -H %s' %self.ipmi_host])
+        call(['pkill', '-f', 'ipmitool -H %s' %self.host])
         proc = Popen(
             ['ipmitool',
-            '-H', self.ipmi_host,
-            '-U', self.ipmi_user,
-            '-P', self.ipmi_pass,
+            '-H', self.host,
+            '-U', self.user,
+            '-P', self.password,
             '-I', 'lanplus',
             'sol', 'deactivate'],
             stdin=PIPE,
@@ -125,4 +125,4 @@ class Ipmi(Obm):
             return "".join(i for i in log.read() if ord(i)<128)
 
     def get_console_log_filename(self):
-        return '/var/run/haas_console_logs/%s.log' % self.ipmi_host
+        return '/var/run/haas_console_logs/%s.log' % self.host
