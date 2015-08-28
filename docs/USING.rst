@@ -88,7 +88,6 @@ As of 13 Aug 2015 there is no cli equivalent for this
 
 ** Adding ports to the switch **
 
-Command
 ::
 
    curl -X put http://127.0.0.1:5000/switch/bHaaS_switch/port/port-01
@@ -97,7 +96,6 @@ will register port-01 of switch named bHaaS_switch
 
 ** Deleting Ports from HaaS **
 
-Commands:
 ::
 
    curl -X DELETE http://127.0.0.1:5000/switch/bHaaS_switch/port/port-01
