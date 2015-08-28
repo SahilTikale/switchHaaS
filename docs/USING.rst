@@ -75,16 +75,3 @@ curl -X PUT http://127.0.0.1:5001/node/dummyNoderHaaS-02 -d '
 > "ipmi_password": "ipmiPass4node-02"
 > }}'
 
-
-Registering nodes in recursive HaaS: 
-
-
-Node name = dummyNoderHaaS-03
-bHaaS info: 
-bhaas_nodename = dummyNode-03
-
-curl -X PUT http://127.0.0.1:5001/node/dummyNoderHaaS-03 -d '
-> {"obm": { "type": "http://schema.massopencloud.org/haas/v0/obm/haas_obm",
-> "bhaas_nodename": "dummyNode-03"
-> }}'
-
